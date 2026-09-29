@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://ojoisrael.github.io/</loc></url>
-  <url><loc>https://ojoisrael.github.io/articles/ai-lead-qualification-n8n.html</loc></url>
-  <url><loc>https://ojoisrael.github.io/articles/automatically-qualify-leads-with-ai.html</loc></url>
-  <url><loc>https://ojoisrael.github.io/articles/ai-lead-qualification-workflow-n8n.html</loc></url>
-  <url><loc>https://ojoisrael.github.io/articles/automatically-score-leads-with-ai.html</loc></url>
-  <url><loc>https://ojoisrael.github.io/articles/automate-lead-follow-up.html</loc></url>
-  <url><loc>https://ojoisrael.github.io/about.html</loc></url>
-  <url><loc>https://ojoisrael.github.io/articles/</loc></url>
+  <url><loc>https://ojoisrael.github.io/</loc><lastmod>2026-09-29</lastmod></url>
+  <url><loc>https://ojoisrael.github.io/about.html</loc><lastmod>2026-09-29</lastmod></url>
+  <url><loc>https://ojoisrael.github.io/articles/</loc><lastmod>2026-09-29</lastmod></url>
+  <url><loc>https://ojoisrael.github.io/articles/automatically-qualify-leads-with-ai.html</loc><lastmod>2026-09-29</lastmod></url>
+  <url><loc>https://ojoisrael.github.io/articles/ai-lead-qualification-workflow-n8n.html</loc><lastmod>2026-09-29</lastmod></url>
+  <url><loc>https://ojoisrael.github.io/articles/automatically-score-leads-with-ai.html</loc><lastmod>2026-09-29</lastmod></url>
+  <url><loc>https://ojoisrael.github.io/articles/automate-lead-follow-up.html</loc><lastmod>2026-09-29</lastmod></url>
 </urlset>
