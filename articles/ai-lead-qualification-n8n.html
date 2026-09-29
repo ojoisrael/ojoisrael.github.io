@@ -1,99 +1,14 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>How to Build an AI Lead Qualification Workflow with n8n | Ojo Israel</title>
-  <meta name="description" content="A practical guide to building an AI lead qualification workflow with n8n, Tally, Gemini, HubSpot and automated follow-up.">
-  <link rel="canonical" href="https://ojoisrael.github.io/articles/ai-lead-qualification-n8n.html">
-  <link rel="stylesheet" href="../styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Lead Qualification with n8n | Ojo Israel</title>
+<meta name="description" content="This guide has moved to the updated AI lead qualification workflow guide.">
+<link rel="canonical" href="https://ojoisrael.github.io/articles/ai-lead-qualification-workflow-n8n.html">
+<meta http-equiv="refresh" content="0; url=/articles/ai-lead-qualification-workflow-n8n.html">
 </head>
 <body>
-<header class="site-header"><div class="container nav"><a class="brand" href="/">Ojo Israel</a><nav><a href="/">Guides</a><a href="https://ojo-israel-portfolio.lovable.app" target="_blank" rel="noopener">Portfolio</a><a href="https://github.com/ojoisrael/ai-lead-qualification-n8n" target="_blank" rel="noopener">GitHub project</a></nav></div></header>
-<main class="container article">
-  <a class="back" href="/">← All guides</a>
-  <p class="eyebrow">N8N · AI · LEAD MANAGEMENT</p>
-  <h1>How to Build an AI Lead Qualification Workflow with n8n</h1>
-  <p class="intro">When a business receives leads through a website form, the slow part is often what happens after the form is submitted. Someone has to read the lead, decide whether the person is a fit, update the CRM and follow up. This can be turned into a structured automation.</p>
-
-  <h2>What is AI lead qualification?</h2>
-  <p>AI lead qualification uses an AI model to evaluate information submitted by a prospect against rules that define a qualified lead. The AI can extract useful fields, classify intent and return a structured decision that the rest of the workflow can use.</p>
-  <p>The important part is not simply asking an AI model, “Is this lead good?” A useful workflow gives the model clear fields, criteria and an output format, then keeps business actions deterministic.</p>
-
-  <h2>The workflow architecture</h2>
-  <div class="workflow">Tally form → n8n Webhook → Validate lead data → AI qualification → Structured decision → HubSpot → Follow-up / internal notification</div>
-  <p>In this example, Tally collects the lead. n8n receives the submission, checks the data, sends the relevant information to an AI model, writes the result to HubSpot and branches the workflow based on the qualification result.</p>
-
-  <h2>Step 1: Capture the lead</h2>
-  <p>Start with the form fields your sales process actually needs. Depending on the business, this might include name, email, company, service required, budget range, timeline and a short description of the problem.</p>
-  <div class="note"><strong>Practical rule:</strong> Do not collect fields just because they are available. Every field should help qualification, personalization or follow-up.</div>
-
-  <h2>Step 2: Receive the submission in n8n</h2>
-  <p>An n8n Webhook node can receive the form submission. The next step should validate required fields before the data reaches the AI model.</p>
-  <p>For example, you can check that an email exists, that the request contains a meaningful description and that required commercial fields are not empty.</p>
-
-  <h2>Step 3: Ask the AI for a structured qualification</h2>
-  <p>The AI should receive the business's qualification criteria and the lead data. A useful output can contain a qualification label, score, reasons, missing information and a suggested next action.</p>
-  <div class="workflow">Lead data + qualification rules → AI model → { status, score, reasons, missing_information, next_action }</div>
-  <p>Keep the output structured. If the workflow expects JSON, validate the returned data before using it in downstream CRM or email actions.</p>
-
-  <h2>Example qualification logic</h2>
-  <table>
-    <thead><tr><th>Signal</th><th>Example interpretation</th><th>Possible action</th></tr></thead>
-    <tbody>
-      <tr><td>Clear business need</td><td>Problem matches the service</td><td>Continue qualification</td></tr>
-      <tr><td>Budget provided</td><td>Budget is within the business's target range</td><td>Increase qualification confidence</td></tr>
-      <tr><td>Urgent timeline</td><td>Prospect wants a solution soon</td><td>Prioritize follow-up</td></tr>
-      <tr><td>Missing critical information</td><td>AI cannot make a reliable decision</td><td>Request more information</td></tr>
-    </tbody>
-  </table>
-  <p>These are examples, not universal rules. Each business should define its own qualification criteria.</p>
-
-  <h2>Step 4: Update HubSpot</h2>
-  <p>Once the result has been validated, n8n can create or update the contact in HubSpot and store qualification fields. Useful fields might include qualification status, score, reason, source and recommended next action.</p>
-  <p>This gives the sales team context without requiring them to read every raw form submission first.</p>
-
-  <h2>Step 5: Branch the workflow</h2>
-  <p>Use deterministic conditions in n8n for business actions. For example:</p>
-  <div class="workflow">Qualified → notify sales + start follow-up<br>Needs information → send clarification request<br>Not qualified → record result + send appropriate response</div>
-  <p>The AI can help interpret unstructured information, but the workflow should decide what happens next using explicit conditions. This makes the automation easier to test and maintain.</p>
-
-  <h2>Step 6: Automate follow-up</h2>
-  <p>A qualified lead can trigger an email or another approved follow-up channel. The message can use the lead's actual request to make the response relevant rather than sending the same generic message to everyone.</p>
-  <p>For higher-value sales processes, automated follow-up can create a task for a human instead of trying to replace the salesperson.</p>
-
-  <h2>Handling bad or incomplete data</h2>
-  <p>Real submissions are messy. People leave fields blank, enter invalid emails or write answers that do not contain enough information. Build validation and fallback paths before the AI step.</p>
-  <ul>
-    <li>Validate required fields.</li>
-    <li>Normalize values where necessary.</li>
-    <li>Handle missing or invalid email addresses.</li>
-    <li>Validate the AI's structured output.</li>
-    <li>Log failed executions so they can be reviewed.</li>
-    <li>Keep a human review path for uncertain cases.</li>
-  </ul>
-
-  <h2>Common mistakes</h2>
-  <ol>
-    <li><strong>Using vague qualification criteria.</strong> AI cannot reliably apply rules that the business has not defined.</li>
-    <li><strong>Letting the model control every action.</strong> Use deterministic workflow conditions for important business operations.</li>
-    <li><strong>Skipping validation.</strong> Bad input can create bad CRM records and confusing follow-up.</li>
-    <li><strong>Ignoring failure handling.</strong> External APIs and AI calls can fail or time out.</li>
-    <li><strong>Automating before understanding the process.</strong> A workflow should simplify a real process, not automate unnecessary steps.</li>
-  </ol>
-
-  <h2>When should you automate lead qualification?</h2>
-  <p>Automation becomes useful when lead volume is high enough that manual review consumes meaningful time, when leads arrive from multiple sources, or when sales teams need consistent first-stage qualification.</p>
-  <p>It may not be appropriate to fully automate decisions when the qualification process depends heavily on nuanced human judgment, regulated decisions or information the system cannot reliably access.</p>
-
-  <h2>My implementation</h2>
-  <p>I built a version of this workflow with <strong>n8n, Tally, Gemini, HubSpot, JavaScript and Gmail</strong>. The implementation demonstrates the pattern rather than claiming that one configuration fits every business.</p>
-  <p><a href="https://github.com/ojoisrael/ai-lead-qualification-n8n" target="_blank" rel="noopener">View the AI Lead Qualification n8n project on GitHub →</a></p>
-
-  <h2>Final takeaway</h2>
-  <p>A useful AI lead qualification workflow is not just an AI prompt connected to a form. It is a complete process: collect good data, validate it, apply clear qualification criteria, produce structured AI output, update the CRM, branch safely and keep humans involved where judgment is still needed.</p>
-  <p>If you are deciding what to automate in your own business, start with one repetitive process that has a clear input, clear output and measurable time cost.</p>
-</main>
-<footer><div class="container">Built by Ojo Israel — AI & Workflow Automation Specialist · <a href="https://ojo-israel-portfolio.lovable.app">Portfolio</a></div></footer>
+<p>This guide has moved to <a href="/articles/ai-lead-qualification-workflow-n8n.html">How to Build an AI Lead Qualification Workflow with n8n</a>.</p>
 </body>
 </html>
