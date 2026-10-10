@@ -1,0 +1,92 @@
+name: Submit updated pages to IndexNow
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "*.html"
+      - "articles/**/*.html"
+      - "articles/index.html"
+      - "sitemap.xml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  indexnow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Submit changed URLs to IndexNow
+        env:
+          INDEXNOW_KEY: "a7f3c91e5d8b4a20c6f1e9d3b7a5c8e2f4d6b0a9c1e7f3d5b8a2c6e0f9d4a1b7"
+          INDEXNOW_HOST: "ojoisrael.github.io"
+          INDEXNOW_KEY_LOCATION: "https://ojoisrael.github.io/indexnow-key.txt"
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          import urllib.request
+          import xml.etree.ElementTree as ET
+          from pathlib import PurePosixPath
+
+          host = os.environ["INDEXNOW_HOST"]
+          key = os.environ["INDEXNOW_KEY"]
+          key_location = os.environ["INDEXNOW_KEY_LOCATION"]
+          base = f"https://{host}"
+
+          changed = subprocess.check_output(
+              ["git", "diff", "--name-only", "HEAD^", "HEAD"],
+              text=True
+          ).splitlines()
+
+          urls = set()
+          if "sitemap.xml" in changed:
+              try:
+                  root = ET.parse("sitemap.xml").getroot()
+                  for loc in root.findall(".//{*}loc"):
+                      if loc.text and loc.text.startswith(base):
+                          urls.add(loc.text.strip())
+              except (ET.ParseError, OSError) as exc:
+                  raise SystemExit(f"Could not read sitemap.xml: {exc}")
+
+          for path in changed:
+              if not path.endswith(".html"):
+                  continue
+              if path == "index.html":
+                  urls.add(base + "/")
+              elif path == "articles/index.html":
+                  urls.add(base + "/articles/")
+              else:
+                  urls.add(base + "/" + str(PurePosixPath(path)))
+
+          if not urls:
+              print("No changed HTML URLs found; nothing to submit.")
+              raise SystemExit(0)
+
+          payload = {
+              "host": host,
+              "key": key,
+              "keyLocation": key_location,
+              "urlList": sorted(urls)[:10000],
+          }
+          request = urllib.request.Request(
+              "https://api.indexnow.org/indexnow",
+              data=json.dumps(payload).encode("utf-8"),
+              headers={"Content-Type": "application/json; charset=utf-8"},
+              method="POST",
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  print(f"IndexNow response: HTTP {response.status}")
+                  print(f"Submitted {len(payload['urlList'])} URL(s).")
+          except Exception as exc:
+              raise SystemExit(f"IndexNow submission failed: {exc}")
+          PY
