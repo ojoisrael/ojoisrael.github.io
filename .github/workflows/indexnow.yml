@@ -28,6 +28,7 @@ jobs:
           INDEXNOW_KEY: "a7f3c91e5d8b4a20c6f1e9d3b7a5c8e2f4d6b0a9c1e7f3d5b8a2c6e0f9d4a1b7"
           INDEXNOW_HOST: "ojoisrael.github.io"
           INDEXNOW_KEY_LOCATION: "https://ojoisrael.github.io/indexnow-key.txt"
+          GITHUB_EVENT_NAME: "${{ github.event_name }}"
         run: |
           python - <<'PY'
           import json
@@ -48,7 +49,7 @@ jobs:
           ).splitlines()
 
           urls = set()
-          if "sitemap.xml" in changed:
+          if "sitemap.xml" in changed or os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch":
               try:
                   root = ET.parse("sitemap.xml").getroot()
                   for loc in root.findall(".//{*}loc"):
