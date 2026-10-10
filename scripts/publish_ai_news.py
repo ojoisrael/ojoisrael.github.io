@@ -17,7 +17,9 @@ TODAY = dt.datetime.now(dt.timezone.utc).date().isoformat()
 
 def request_json(url, payload=None, headers=None, method=None):
     data = json.dumps(payload).encode() if payload is not None else None
-    req = urllib.request.Request(url, data=data, headers=headers or {}, method=method)
+    request_headers = {"Content-Type": "application/json"} if payload is not None else {}
+    request_headers.update(headers or {})
+    req = urllib.request.Request(url, data=data, headers=request_headers, method=method)
     try:
         with urllib.request.urlopen(req, timeout=60) as response:
             return json.loads(response.read().decode("utf-8"))
