@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How to Build an AI Customer Support Workflow in n8n</title>
+  <meta name="description" content="Learn how to build an n8n AI customer support workflow with Gemini and Supabase for ticket classification, knowledge-base answers and human escalation.">
+  <link rel="canonical" href="https://ojoisrael.github.io/articles/ai-customer-support-workflow-n8n.html">
+  <meta property="og:title" content="How to Build an AI Customer Support Workflow in n8n">
+  <meta property="og:description" content="A practical guide to classifying support requests, retrieving knowledge-base answers with RAG and escalating difficult cases using n8n, Gemini and Supabase.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://ojoisrael.github.io/articles/ai-customer-support-workflow-n8n.html">
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"BlogPosting",
+    "headline":"How to Build an AI Customer Support Workflow in n8n",
+    "description":"A practical guide to classifying support requests, retrieving knowledge-base answers with RAG and escalating difficult cases using n8n, Gemini and Supabase.",
+    "datePublished":"2026-10-17",
+    "dateModified":"2026-10-17",
+    "author":{"@type":"Person","name":"Ojo Israel","url":"https://www.linkedin.com/in/ojo-israel-ai-and-workflow-automation"},
+    "publisher":{"@type":"Person","name":"Ojo Israel"},
+    "mainEntityOfPage":{"@type":"WebPage","@id":"https://ojoisrael.github.io/articles/ai-customer-support-workflow-n8n.html"}
+  }
+  </script>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"><div class="container nav">
+  <a class="brand" href="/">Ojo Israel</a>
+  <nav><a href="/">Home</a><a href="/articles/">Articles</a><a href="/news.html">AI News</a><a href="https://ojo-israel-portfolio.lovable.app" target="_blank" rel="noopener">Portfolio</a><a href="https://www.linkedin.com/in/ojo-israel-ai-and-workflow-automation" target="_blank" rel="noopener">LinkedIn</a></nav>
+</div></header>
+<main class="container article">
+  <p class="eyebrow">N8N · AI CUSTOMER SUPPORT · RAG</p>
+  <h1>How to Build an AI Customer Support Workflow in n8n</h1>
+  <p class="lead">Build a support workflow that classifies incoming messages, finds relevant answers in a knowledge base, and sends sensitive or unresolved cases to a human instead of letting AI guess.</p>
+  <p class="meta">Published October 17, 2026 · By Ojo Israel</p>
+
+  <p>Customer support gets difficult when the same questions arrive repeatedly, order information lives in separate systems, and frustrated customers wait too long for a useful answer. An AI customer support workflow can help with triage and retrieval, but it should not be designed to answer every question automatically.</p>
+  <p>This guide explains a practical architecture using n8n, Google Gemini and Supabase. It focuses on an important distinction: use AI to interpret language and find relevant information, then use explicit workflow rules to decide what happens next.</p>
+
+  <h2>What this workflow should do</h2>
+  <ul>
+    <li>Classify each message, for example as order status, shipping, refund, or general support.</li>
+    <li>Detect signs of frustration that may require a human response.</li>
+    <li>Search approved support documentation for relevant evidence.</li>
+    <li>Use order data only when the customer and order can be safely matched.</li>
+    <li>Log the request and route uncertain, sensitive or unresolved cases for review.</li>
+  </ul>
+  <p>The goal is not to remove people from support. It is to reduce repetitive sorting and help agents focus on cases that need judgment.</p>
+
+  <h2>Tools and their roles</h2>
+  <table>
+    <thead><tr><th>Tool</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td>n8n</td><td>Connects the trigger, AI steps, database lookups, routing and notifications.</td></tr>
+      <tr><td>Gemini</td><td>Classifies the message, extracts relevant fields and drafts a response from supplied evidence.</td></tr>
+      <tr><td>Supabase</td><td>Stores support records and, when configured, vector embeddings for semantic retrieval.</td></tr>
+      <tr><td>Supabase Vector Store</td><td>Retrieves knowledge-base chunks that are semantically relevant to the question.</td></tr>
+      <tr><td>Gmail or a team inbox</td><td>Notifies a human when the workflow needs review.</td></tr>
+    </tbody>
+  </table>
+  <p>Use tools that fit your current stack. The same design can be adapted to another database, model provider or help-desk platform.</p>
+
+  <h2>Workflow overview</h2>
+  <div class="card"><p><strong>New support message → Validate input → Gemini classification → Check escalation rules → Search knowledge base / order records → Draft evidence-based answer → Human review or response → Log outcome</strong></p></div>
+  <p>Keep classification, retrieval and action routing as separate stages. That makes it easier to inspect why a request took a particular path and to fix failures without rebuilding the whole workflow.</p>
+
+  <h2>1. Capture and validate the support request</h2>
+  <p>Start with the channel where requests arrive. For a prototype, this might be a webhook or a form. For a live business, it could be an email trigger or a help-desk integration supported by your n8n setup.</p>
+  <p>Normalize the message into a predictable structure before calling the model. Useful fields include a request ID, message text, customer identifier, order ID if supplied, channel and received timestamp. Reject or route empty messages and malformed payloads instead of sending them downstream as if they were valid.</p>
+  <p>Minimize personal data. Only send the model the information needed for the task, and avoid putting passwords, payment-card details or other secrets into prompts or logs.</p>
+
+  <h2>2. Classify intent and sentiment with Gemini</h2>
+  <p>Ask Gemini for a small, defined set of labels rather than an open-ended explanation. A starter set could be:</p>
+  <ul>
+    <li><strong>order_status:</strong> a question about an existing order.</li>
+    <li><strong>shipping:</strong> delivery time, tracking or shipping policy.</li>
+    <li><strong>refund:</strong> a refund, return or cancellation request.</li>
+    <li><strong>general:</strong> a question answered by general support documentation.</li>
+    <li><strong>positive:</strong> praise or positive feedback that may not need a support action.</li>
+  </ul>
+  <p>Have the model return structured fields such as intent, sentiment, extracted order ID, short summary and confidence if your chosen node supports reliable structured output. Validate the result in n8n before using it. If the output is missing a required field or contains an unknown label, send the request to a safe fallback route.</p>
+  <p>Sentiment is an imperfect signal, not a definitive measure of a customer's state. Treat obvious frustration as a reason to consider faster human attention, but do not let a sentiment label alone approve a refund or deny service.</p>
+
+  <h2>3. Add explicit escalation rules</h2>
+  <p>Before generating an answer, check whether the request should be handled by a person. Escalation conditions may include:</p>
+  <ul>
+    <li>The message indicates serious frustration, repeated failure or a complaint.</li>
+    <li>The customer requests a human.</li>
+    <li>The message involves a refund exception, account access, payment dispute or another policy-sensitive action.</li>
+    <li>The model output is invalid, ambiguous or below your chosen confidence threshold.</li>
+    <li>The knowledge base does not contain enough evidence to answer.</li>
+  </ul>
+  <p>Use n8n IF or Switch nodes for these deterministic rules. Record the reason for escalation and send a notification that includes the request ID, category, short summary and a link to the relevant record where possible. Avoid including unnecessary personal information in notification messages.</p>
+
+  <h2>4. Prepare a knowledge base for retrieval</h2>
+  <p>Collect approved answers from sources such as shipping policies, return rules, product FAQs and troubleshooting guides. Break long documents into smaller, meaningful chunks, preserve useful titles or source metadata, and generate embeddings with a compatible embedding model. Store the text, metadata and vector in Supabase.</p>
+  <p>For an existing Supabase setup, confirm that the vector column dimensions match the embedding model and that the database function used for similarity search matches the arguments expected by your workflow. These mismatches can cause retrieval errors even when the embeddings themselves were created successfully.</p>
+  <p>Official references: <a href="https://supabase.com/docs/guides/ai/vector-columns" target="_blank" rel="noopener">Supabase vector columns</a>, <a href="https://supabase.com/docs/guides/ai/semantic-search" target="_blank" rel="noopener">Supabase semantic search</a> and <a href="https://ai.google.dev/gemini-api/docs/embeddings" target="_blank" rel="noopener">Gemini embeddings documentation</a>.</p>
+
+  <h2>5. Retrieve relevant evidence before drafting an answer</h2>
+  <p>Embed the customer's question with the same compatible embedding model used for the knowledge base, then search Supabase for the most relevant chunks. Apply any needed access controls or metadata filters before using the results.</p>
+  <p>Pass the retrieved text to Gemini with a clear instruction: answer only from the supplied evidence, do not invent policy details, and say when the evidence is insufficient. Include source titles or document identifiers in the internal result so a human can verify the answer.</p>
+  <p>Semantic similarity does not guarantee correctness. If the retrieved chunks are irrelevant, outdated or contradictory, do not send a confident-sounding answer just because the search returned results. Route the request for review or ask a narrow clarifying question.</p>
+
+  <h2>6. Look up order details safely</h2>
+  <p>For order-status requests, use a database lookup rather than asking the model to invent a delivery status. Match the request to an authorized customer and order using your application's access rules. An order ID alone may not be sufficient proof that the person is entitled to see the order.</p>
+  <p>Return only the fields needed to answer the question, such as a permitted status or estimated delivery window. Do not expose internal notes, another customer's details or sensitive payment information. For refunds and cancellations, the workflow can collect details and notify an agent, while the actual decision remains subject to the business's approved rules.</p>
+
+  <h2>7. Choose between a response and a human handoff</h2>
+  <p>Once retrieval or the order lookup is complete, route the request using clear conditions:</p>
+  <ul>
+    <li><strong>Evidence is sufficient and the action is low risk:</strong> prepare a concise answer based on the approved information.</li>
+    <li><strong>Evidence is incomplete or conflicting:</strong> ask for clarification or escalate.</li>
+    <li><strong>Policy exception or sensitive request:</strong> send it to a human.</li>
+    <li><strong>Technical error:</strong> log the failure and use a fallback route rather than silently dropping the message.</li>
+  </ul>
+  <p>During initial deployment, consider sending all AI-drafted responses to an agent for approval. Once you have reviewed real examples and measured error rates, you can decide which low-risk categories are suitable for automatic replies.</p>
+
+  <h2>8. Log the outcome and handle errors</h2>
+  <p>Save a record of the request ID, category, escalation reason, retrieval result status, action taken, timestamps and final outcome. Keep logs useful for debugging but avoid storing full message content or personal data unless there is a clear business need and an appropriate retention policy.</p>
+  <p>Configure n8n error handling for failed model calls, database timeouts, malformed outputs and notification failures. Alert the team when an important path fails, and make sure retries do not send duplicate replies or create duplicate support records. Use a stable request ID or another idempotency mechanism where possible.</p>
+
+  <h2>How to test the workflow before launch</h2>
+  <p>Build a small test set that covers ordinary requests and failure cases. Do not evaluate the system only with easy questions that match your knowledge base perfectly.</p>
+  <table>
+    <thead><tr><th>Test case</th><th>Expected behavior</th></tr></thead>
+    <tbody>
+      <tr><td>Common shipping-policy question</td><td>Retrieves the correct policy and drafts an answer grounded in it.</td></tr>
+      <tr><td>Order-status question with a valid authorized match</td><td>Uses the permitted order record rather than guessing a status.</td></tr>
+      <tr><td>Unknown order or missing identifier</td><td>Requests clarification or routes to a person without fabricating details.</td></tr>
+      <tr><td>Angry complaint</td><td>Escalates according to the configured rules and records the reason.</td></tr>
+      <tr><td>Refund exception</td><td>Uses the approved policy and sends exceptions for human review.</td></tr>
+      <tr><td>Question absent from the knowledge base</td><td>Admits the limitation or escalates instead of inventing an answer.</td></tr>
+      <tr><td>Gemini or Supabase failure</td><td>Logs the error and follows the fallback path without silently losing the request.</td></tr>
+    </tbody>
+  </table>
+  <p>These are recommended test cases, not claims that every case has already passed in your environment. Run them with representative sample data before connecting the workflow to real customers.</p>
+
+  <h2>Metrics worth tracking</h2>
+  <ul>
+    <li><strong>Classification accuracy:</strong> how often the assigned category matches a human-reviewed label.</li>
+    <li><strong>Grounded answer rate:</strong> how often answers are supported by the retrieved source or authorized record.</li>
+    <li><strong>Escalation rate:</strong> how many requests are routed to a human, broken down by reason.</li>
+    <li><strong>First-response time:</strong> how long customers wait before receiving a useful response.</li>
+    <li><strong>Reopen or correction rate:</strong> how often an answer needs correction or the issue returns.</li>
+    <li><strong>Cost per resolved request:</strong> model, infrastructure and human-handling costs divided by resolved requests.</li>
+  </ul>
+  <p>Do not optimize only for fewer escalations. A low escalation rate can look efficient while hiding incorrect answers. Review quality, customer outcomes and operational cost together.</p>
+
+  <h2>Common mistakes to avoid</h2>
+  <ul>
+    <li>Letting the model make refund or account decisions without deterministic checks.</li>
+    <li>Retrieving documents but not checking whether they actually answer the question.</li>
+    <li>Using different embedding models or incompatible vector dimensions for indexing and search.</li>
+    <li>Failing to validate the model's structured output before routing.</li>
+    <li>Ignoring duplicate events, retries and failed notifications.</li>
+    <li>Launching automatic replies before testing unknown questions and edge cases.</li>
+  </ul>
+
+  <h2>What makes this approach useful?</h2>
+  <p>The practical benefit is not simply adding a chatbot. It is connecting language understanding to approved information and clear operational rules. n8n coordinates the process, Gemini helps interpret and draft, Supabase stores and retrieves relevant data, and human escalation gives the workflow a way to handle uncertainty responsibly.</p>
+  <p>The right level of automation depends on the risk of the request. A routine FAQ may be suitable for an automatic answer after testing. A billing dispute, unusual refund or angry complaint usually deserves a human decision.</p>
+
+  <h2>Related resources</h2>
+  <ul>
+    <li><a href="https://ojo-israel-portfolio.lovable.app/portfolio">View my AI and workflow automation portfolio</a>.</li>
+    <li><a href="https://github.com/ojoisrael/ai-customer-support-agent-n8n">Explore the AI customer support agent project on GitHub</a>.</li>
+    <li><a href="/articles/ai-lead-qualification-workflow-n8n.html">Read the n8n AI lead qualification workflow guide</a>.</li>
+  </ul>
+  <p>If your team is handling repetitive support requests, start by mapping the request categories, approved sources and escalation rules. Automate one low-risk category first, measure the results, and expand only when the workflow is reliable.</p>
+</main>
+<footer><div class="container">Built by Ojo Israel — AI &amp; Workflow Automation Specialist · <a href="https://ojo-israel-portfolio.lovable.app">Portfolio</a></div></footer>
+</body>
+</html>
