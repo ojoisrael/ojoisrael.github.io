@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How to Automate Invoice Processing with Make.com and AI</title>
+  <meta name="description" content="Learn how to automate invoice processing with Make.com and AI. Extract invoice data from PDFs, validate key fields, log records in Google Sheets and route exceptions for review.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://ojoisrael.github.io/articles/ai-invoice-processing-make-com.html">
+  <link rel="stylesheet" href="../styles.css">
+  <meta property="og:title" content="How to Automate Invoice Processing with Make.com and AI">
+  <meta property="og:description" content="A practical workflow for extracting invoice data from PDFs with AI, checking the results and recording them automatically.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://ojoisrael.github.io/articles/ai-invoice-processing-make-com.html">
+</head>
+<body>
+<header class="site-header"><div class="container nav"><a class="brand" href="/">Ojo Israel</a><nav><a href="/">Home</a><a href="/articles/">Articles</a><a href="/news.html">AI News</a><a href="/about.html">About</a><a href="https://ojo-israel-portfolio.lovable.app" target="_blank" rel="noopener">Portfolio</a></nav></div></header>
+<main class="container article">
+  <p class="eyebrow">MAKE.COM · AI AUTOMATION · BUSINESS OPERATIONS</p>
+  <h1>How to Automate Invoice Processing with Make.com and AI</h1>
+  <p class="lead">If your team still opens PDF invoices and copies supplier names, invoice numbers, dates and totals into a spreadsheet, you can automate much of that repetitive work. A Make.com workflow can collect invoice files, use AI to extract structured fields, validate the results and save them for review without treating AI output as automatically correct.</p>
+  <p><em>Updated October 17, 2026 · By Ojo Israel, AI &amp; Workflow Automation Specialist</em></p>
+
+  <h2>What is AI invoice processing automation?</h2>
+  <p>AI invoice processing automation combines a workflow tool with document extraction and validation. Instead of manually reading every invoice and retyping the same fields, the workflow captures the file, extracts relevant information, checks whether required values are present and records the result in a spreadsheet or accounting system.</p>
+  <p>Make.com coordinates the steps. An AI model can interpret invoice text that varies from one supplier to another, while ordinary workflow rules check the output and send questionable records to a person.</p>
+  <p>The goal is not to let an AI model approve or pay every invoice on its own. The goal is to reduce data entry while preserving financial controls.</p>
+
+  <h2>When is this workflow useful?</h2>
+  <ul>
+    <li>Small businesses that receive invoices as email attachments or PDF files.</li>
+    <li>Operations teams that maintain an invoice register in Google Sheets.</li>
+    <li>Bookkeepers who need consistent invoice fields before entering them into accounting software.</li>
+    <li>Agencies or service businesses that receive supplier bills from many vendors.</li>
+  </ul>
+  <p>If you only receive a few invoices each month, a spreadsheet template may be enough. Automation becomes more useful when the same steps happen repeatedly, several people handle the documents, or missing and inconsistent data creates extra follow-up.</p>
+
+  <h2>Tools you can use</h2>
+  <ul>
+    <li><strong>Make.com:</strong> connects the trigger, document handling, AI extraction, validation and destination.</li>
+    <li><strong>Google Drive:</strong> stores incoming PDF invoices in a dedicated folder.</li>
+    <li><strong>PDF.co or another PDF extraction service:</strong> extracts text from PDFs when needed. Scanned documents may require OCR.</li>
+    <li><strong>Gemini or another AI model:</strong> turns extracted invoice text into structured fields.</li>
+    <li><strong>Google Sheets:</strong> provides a simple invoice register for a first version.</li>
+    <li><strong>Email or a team notification tool:</strong> alerts someone when a document needs review.</li>
+  </ul>
+  <p>You do not need to use this exact stack. Choose services that fit your budget, data protection requirements and existing accounting process. Check each provider's current pricing and data-handling terms before connecting real financial documents.</p>
+
+  <h2>How the invoice automation workflow works</h2>
+  <ol>
+    <li><strong>Capture a new invoice.</strong> Start the scenario when a PDF is added to a specific Google Drive folder or received through an approved inbox.</li>
+    <li><strong>Get the file.</strong> Download the PDF or pass it to a document extraction service. Keep the original file so a reviewer can verify the extracted values.</li>
+    <li><strong>Extract the text.</strong> Use PDF text extraction for digital PDFs. Use OCR when the document is a scan or photo. If extraction returns almost no text, route the file to manual review rather than sending an empty prompt to the model.</li>
+    <li><strong>Ask AI for structured data.</strong> Request a predictable JSON object containing the supplier name, invoice number, invoice date, due date, currency, subtotal, tax and total. Tell the model to return null for a field it cannot find, not to guess.</li>
+    <li><strong>Parse and validate the output.</strong> Use Make.com filters or parsing modules to confirm that the response is valid and the required fields exist. Check number formats and dates before writing to the register.</li>
+    <li><strong>Check for duplicates.</strong> Search the register using a combination such as supplier plus invoice number. Treat possible duplicates as exceptions; do not silently create another record.</li>
+    <li><strong>Save the result.</strong> Add validated data to Google Sheets and include the source file link, processing timestamp and review status.</li>
+    <li><strong>Route exceptions to a person.</strong> Notify the responsible person when fields are missing, totals do not reconcile, the invoice appears duplicated or extraction confidence is unclear.</li>
+  </ol>
+
+  <h2>What should the extracted invoice data look like?</h2>
+  <p>Keep the first version focused on fields that are useful to your process. A simple record might include:</p>
+  <ul>
+    <li>Supplier or vendor name</li>
+    <li>Invoice number</li>
+    <li>Invoice date and due date</li>
+    <li>Currency</li>
+    <li>Subtotal, tax and total</li>
+    <li>Source document URL</li>
+    <li>Processing status: needs review, validated or exception</li>
+  </ul>
+  <p>Do not assume every invoice uses the same currency, tax format or date convention. Store currency explicitly, normalize dates consistently and avoid converting monetary values into numbers until you have handled commas, decimal separators and currency symbols correctly.</p>
+
+  <h2>A prompt pattern for invoice extraction</h2>
+  <p>You can adapt this instruction for the AI module in your scenario. The actual Make.com module and response settings depend on the model provider you choose.</p>
+  <pre><code>Extract invoice fields from the document text below.
+
+Return only valid JSON with these keys:
+supplier_name, invoice_number, invoice_date, due_date,
+currency, subtotal, tax, total.
+
+Rules:
+- Do not invent missing information.
+- Use null when a field is not clearly present.
+- Preserve the currency code when available.
+- Return monetary amounts as numbers without currency symbols.
+- If the document contains conflicting totals or appears not to be an invoice,
+  set needs_review to true and explain briefly in review_reason.
+- Do not approve or initiate payment.
+
+Document text:
+[Insert extracted invoice text]</code></pre>
+  <p>This prompt helps standardize the response, but it is not a substitute for validation. AI can still misread digits, confuse a purchase order with an invoice number, or return a plausible value that is wrong.</p>
+
+  <h2>Validation rules you should not skip</h2>
+  <ul>
+    <li><strong>Required fields:</strong> check that supplier, invoice number and total are present before marking the record as ready.</li>
+    <li><strong>Arithmetic:</strong> where the invoice format supports it, compare subtotal plus tax and other charges with the stated total, allowing for documented rounding differences.</li>
+    <li><strong>Duplicate detection:</strong> flag matching supplier and invoice number combinations for review.</li>
+    <li><strong>File traceability:</strong> keep the original invoice and link each spreadsheet row to it.</li>
+    <li><strong>Exception handling:</strong> record errors and send failed items to a review queue instead of dropping them silently.</li>
+    <li><strong>Access control:</strong> restrict the spreadsheet and source folder because invoices may contain personal, commercial or bank details.</li>
+  </ul>
+  <p>For a first version, Google Sheets is useful for visibility and testing. For a larger operation, consider a database or direct accounting-system integration with access controls, audit history and a clear recovery process.</p>
+
+  <h2>What should remain under human control?</h2>
+  <p>Use AI to extract and organize information, not to make unreviewed financial commitments. Keep payment release, changes to supplier bank details, unusual invoices and high-value approvals under an established human approval process. An email or invoice that appears to come from a known supplier can still be fraudulent.</p>
+  <p>When a record fails validation, preserve the original document and the reason it was flagged. A reviewer should be able to compare the extracted fields against the source before approving the next step.</p>
+
+  <h2>How to test before using real invoices</h2>
+  <p>Start with a small set of sample or redacted documents. Include ordinary digital PDFs, invoices with different layouts, missing due dates, unusual number formats, duplicate invoice numbers and low-quality scans. Compare each extracted field with the original document and record the errors.</p>
+  <p>Measure more than whether the scenario ran successfully. Useful measures include:</p>
+  <ul>
+    <li>Percentage of invoices with all required fields extracted correctly</li>
+    <li>Number of records sent to manual review</li>
+    <li>Duplicate invoices detected</li>
+    <li>Failed or incomplete runs</li>
+    <li>Average time spent correcting each invoice</li>
+  </ul>
+  <p>Do not publish a time-saving or accuracy percentage unless you measured it against your own representative invoice sample.</p>
+
+  <h2>Common mistakes to avoid</h2>
+  <ul>
+    <li><strong>Trusting the AI response without checks:</strong> validate fields and arithmetic before using the record.</li>
+    <li><strong>Sending an entire PDF as plain text when no text was extracted:</strong> detect empty extraction and route it appropriately.</li>
+    <li><strong>Ignoring duplicate invoices:</strong> add a lookup and a review path before creating a new row.</li>
+    <li><strong>Using one date or currency assumption for every supplier:</strong> normalize carefully and keep the source for reference.</li>
+    <li><strong>Failing to log errors:</strong> keep the file identifier, scenario status and exception reason so failures can be recovered.</li>
+    <li><strong>Automating payment too early:</strong> first prove extraction and validation are reliable, then integrate with accounting systems under explicit approval controls.</li>
+  </ul>
+
+  <h2>Is Make.com enough, or should you use n8n?</h2>
+  <p>Make.com is a practical choice when you want to assemble a visual workflow quickly and connect common business apps. n8n may be attractive when you need more control over hosting, custom logic or the wider workflow environment. Both can orchestrate invoice extraction, validation and routing; neither makes the AI output inherently accurate.</p>
+  <p>Choose based on the integrations you need, how you will handle sensitive documents, expected processing volume, operational maintenance and total cost. Prototype with a few documents before committing to a more complex setup.</p>
+
+  <h2>Final takeaway</h2>
+  <p>A useful AI invoice processing workflow does more than read a PDF. It captures the document, extracts structured fields, checks the result, detects possible duplicates, logs the source and sends exceptions to a person. Make.com can connect those steps so a team spends less time retyping data and more time reviewing the records that actually need attention.</p>
+  <p>If you are planning to automate an invoice or document workflow, <a href="https://ojo-israel-portfolio.lovable.app/portfolio">view my automation portfolio</a> or <a href="https://www.linkedin.com/in/ojo-israel-ai-and-workflow-automation">connect with me on LinkedIn</a>.</p>
+
+  <h2>Related reading</h2>
+  <ul>
+    <li><a href="/articles/ai-customer-support-workflow-n8n.html">How to Build an AI Customer Support Workflow in n8n</a></li>
+    <li><a href="/articles/ai-lead-qualification-workflow-n8n.html">How to Build an AI Lead Qualification Workflow with n8n</a></li>
+    <li><a href="/articles/">Browse all AI and workflow automation guides</a></li>
+  </ul>
+</main>
+<footer><div class="container">Built by Ojo Israel — AI &amp; Workflow Automation Specialist · <a href="https://ojo-israel-portfolio.lovable.app">Portfolio</a></div></footer>
+</body>
+</html>
